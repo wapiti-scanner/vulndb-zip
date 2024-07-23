@@ -1,0 +1,60 @@
+name: Update VulnDB
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-vulndb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Download VulnDB Files and Create Zip
+        run: |
+          python make_zip.py
+
+      - name: Create GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: 'vulndb-$(date +%Y%m%d)'
+          release_name: 'VulnDB $(date +%Y-%m-%d)'
+          body: 'Daily update of vulnerability database'
+          draft: false
+          prerelease: false
+
+      - name: Upload Apache zip asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vulndb_files/apache.zip
+          asset_name: apache.zip
+          asset_content_type: application/zip
+
+      - name: Upload PHP zip asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vulndb_files/php.zip
+          asset_name: php.zip
+          asset_content_type: application/zip
