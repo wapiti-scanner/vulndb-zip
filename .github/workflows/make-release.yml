@@ -23,6 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Set environment variables for date
+        id: date
+        run: |
+          echo "TAG_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+          echo "RELEASE_DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
+
       - name: Download VulnDB Files and Create Zip
         run: |
           python make_zip.py
@@ -33,8 +39,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: 'vulndb-$(date +%Y%m%d)'
-          release_name: 'VulnDB $(date +%Y-%m-%d)'
+          tag_name: vulndb-${{ env.TAG_DATE }}
+          release_name: VulnDB ${{ env.RELEASE_DATE }}
           body: 'Daily update of vulnerability database'
           draft: false
           prerelease: false
